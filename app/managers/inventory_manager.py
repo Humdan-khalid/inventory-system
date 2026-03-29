@@ -1,5 +1,6 @@
 from app.models.product import CreateProduct, Products
-from sqlmodel import Session
+from sqlmodel import Session, select
+from fastapi import HTTPException, status
 
 class InventoryManager:
     def add_products(self, product: CreateProduct, session: Session)->str:
@@ -18,61 +19,53 @@ class InventoryManager:
       
       return "Product successfully save."
 
-    # def show_all_products(self, user_id: int):
-    #   for product in self.product_list:
-    #     if user_id == product.user_id:
-    #       print(product.show_products())
+    def show_all_products(self, user_id: int, session: Session):
+        db_products = session.exec(select(Products).where(Products.user_id == user_id)).all()
+
+        if not db_products:
+           raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Products not found!")
+        
+        return {"Products": db_products}
       
 
-    # def search_product(self, product_id: int)->str:
-    #     try:
-    #       product_id = int(product_id)
-    #     except ValueError:
-    #       return "Invalid input! product_id must be an integer."
+    def search_product(self, product_id: int, session: Session)->str:
+        db_product = session.exec(select(Products).where(Products.id == product_id)).first()
 
-    #     if product_id <= 0:
-    #       return "Invalid product_id!"
+        if not db_product:
+           raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found!")
+        
+        return db_product
 
-    #     for product in self.product_list:
-    #         if product.id == product_id:
-    #             return f"Product id: {product.id}, name: {product.name}, price: {product.price}, total available pieces: {product.available_stock}, colour: {product.colour}."
-    #     else:
-    #         return "Product not found!"
+    def update_stock_data(self, product_id: int, stock_quantity: int, session: Session)->str:
+      if product_id <= 0:
+        return "Invalid product_id!"
+      
+      db_product = session.exec(select(Products).where(Products.id == product_id)).first()
+      
+      if not db_product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found!")
 
-    # def update_data(self, product_id: int)->str:
-    #     try:
-    #       product_id = int(product_id)
-    #     except ValueError:
-    #       return "Invalid input! product_id must be an integer."
+      if stock_quantity <= 0:
+        return "Invalid stock quantity!"
+      
+      db_product.available_stock += stock_quantity
 
-    #     if product_id <= 0:
-    #       return "Invalid product_id!"
+      session.add(db_product)
+      session.commit()
 
-    #     for product in self.product_list:
-    #         if product.id == product_id:
-    #             try:
-    #                 new_stock: int = int(input("Enter new stock: "))
-    #                 if new_stock <= 0:
-    #                   return "Invalid number!"
-    #                 product.available_stock += new_stock
-    #             except ValueError:
-    #                 return "Invalid Value!"
-    #             return f"Successfully {new_stock} pieces add in stocks."
-    #     else:
-    #         return "id not found!"
+      return{"message": f"Successfully add {stock_quantity} pieces in stock."}
+      
 
-    # def delete_product(self, product_id: int)->str:
-    #     try:
-    #       product_id = int(product_id)
-    #     except ValueError:
-    #       return "Invalid input! product_id must be an integer."
+    def delete_product(self, product_id: int, session: Session)->str:
+        if product_id <= 0:
+          return "Invalid product_id"
+        
+        db_product = session.exec(select(Products).where(Products.id == product_id)).first()
 
-    #     if product_id <= 0:
-    #       return "Invalid product_id"
+        if not db_product:
+           raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found!")
 
-    #     for product in self.product_list:
-    #         if product.id == product_id:
-    #             self.product_list.remove(product)
-    #             return f"product_id: {product_id} successfully deleted."
-    #     else:
-    #         return "Product not found!"
+        session.delete(db_product)
+        session.commit()
+
+        return {"Message": "product deleted successfully."}
