@@ -24,6 +24,25 @@
 # inventory1.add_products(p3)
 # inventory1.show_all_products(2)
 
-from fastapi import FastAPI
+
+from fastapi import FastAPI, status, Depends
+from app.database.database_connection import get_session
+from app.managers.inventory_manager import InventoryManager, Session, CreateProduct
+from app.managers.user_manager import CreateUser, UsersManager
 
 app = FastAPI()
+
+@app.post("/products", status_code=status.HTTP_201_CREATED)
+def add_products_api(product: CreateProduct, session: Session = Depends(get_session)):
+    manager = InventoryManager()
+    return manager.add_products(product, session)
+
+@app.post("/users", status_code=status.HTTP_201_CREATED)
+def add_user_api(user: CreateUser, session: Session = Depends(get_session)):
+    manager = UsersManager()
+    return manager.add_user(user, session)
+
+@app.get("/users", status_code=status.HTTP_200_OK)
+def get_users(session: Session = Depends(get_session)):
+    manager = UsersManager()
+    return manager.show_users(session)
