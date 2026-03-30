@@ -1,7 +1,7 @@
 from fastapi import FastAPI, status, Depends
 from app.database.database_connection import get_session
 from app.managers.inventory_manager import InventoryManager, Session, CreateProduct
-from app.managers.user_manager import CreateUser, UsersManager
+from app.managers.user_manager import CreateUser, UsersManager, LoginUser
 
 app = FastAPI()
 
@@ -39,3 +39,8 @@ def create_stock_update(product_id: int, stock_quantity: int, session: Session =
 def delete_product(product_id: int, session: Session = Depends(get_session)):
     manager = InventoryManager()
     return manager.delete_product(product_id, session)
+
+@app.post("/login", status_code=status.HTTP_200_OK)
+def user_login(user: LoginUser, session: Session=Depends(get_session)):
+    manager = UsersManager()
+    return manager.user_login(user, session)

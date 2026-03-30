@@ -9,8 +9,8 @@ pwd_context = CryptContext(
 def create_hash_password(user_password: str)->str:
     if not user_password:
         raise ValueError("User passwoord is None.")
-    password_hashing = pwd_context.hash(user_password)
-    return password_hashing
+    hash_password = pwd_context.hash(user_password)
+    return hash_password
 
 def verify_password(user_password: str, hashed_password: str):
     if not user_password:
