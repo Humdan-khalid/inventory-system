@@ -1,6 +1,8 @@
 from app.models.product import CreateProduct, Products
+from app.models.user import Users
 from sqlmodel import Session, select
 from fastapi import HTTPException, status
+from app.utils.jwt import verify_token
 
 class InventoryManager:
     def add_products(self, product: CreateProduct, session: Session)->str:
@@ -19,8 +21,12 @@ class InventoryManager:
       
       return "Product successfully save."
 
-    def show_all_products(self, user_id: int, session: Session):
-        db_products = session.exec(select(Products).where(Products.user_id == user_id)).all()
+    def show_all_products(self, user_token: dict, session: Session):
+        db_users = session.exec(select(Users).where(Users.id == user_token["id"])).first()
+        if not db_users:
+           raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user!")
+        
+        db_products = session.exec(select(Products).where(Products.user_id == user_token["id"])).all()
 
         if not db_products:
            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Products not found!")

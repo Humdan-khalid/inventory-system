@@ -2,6 +2,8 @@ from jose import jwt, ExpiredSignatureError, JWTError
 from dotenv import load_dotenv
 import os
 from datetime import datetime, timezone, timedelta
+from fastapi import Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 load_dotenv()
 
@@ -10,7 +12,7 @@ ALGORITHM = os.getenv("algorithm")
 
 def create_token(user_data: dict, exp_time: timedelta = timedelta(minutes=20)):
     if not user_data:
-        return "user_data not found!"
+        raise TypeError("user_data not found!")
     payload = user_data.copy()
     payload["exp"] = datetime.now(timezone.utc) + exp_time
 
@@ -19,9 +21,15 @@ def create_token(user_data: dict, exp_time: timedelta = timedelta(minutes=20)):
 
 def verify_token(token):
     try:
-        token = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        token_decode = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except ExpiredSignatureError:
-        return "Token has expired!"
+        raise ValueError("Token has expired!")
     except JWTError:
-        return "Jwt error!"    
-    return token
+        raise ValueError("jwt error!")    
+    return token_decode
+
+security = HTTPBearer()
+
+def decode_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    return verify_token(token)

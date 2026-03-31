@@ -2,6 +2,7 @@ from fastapi import FastAPI, status, Depends
 from app.database.database_connection import get_session
 from app.managers.inventory_manager import InventoryManager, Session, CreateProduct
 from app.managers.user_manager import CreateUser, UsersManager, LoginUser
+from app.utils.jwt import decode_token
 
 app = FastAPI()
 
@@ -15,15 +16,10 @@ def add_user_api(user: CreateUser, session: Session = Depends(get_session)):
     manager = UsersManager()
     return manager.add_user(user, session)
 
-@app.get("/users", status_code=status.HTTP_200_OK)
-def get_users(session: Session = Depends(get_session)):
-    manager = UsersManager()
-    return manager.show_users(session)
-
 @app.get("/products", status_code=status.HTTP_200_OK)
-def get_products(user_id: int, session: Session = Depends(get_session)):
+def get_products(user_token: dict = Depends(decode_token), session: Session = Depends(get_session)):
     manager = InventoryManager()
-    return manager.show_all_products(user_id, session)
+    return manager.show_all_products(user_token, session)
 
 @app.get("/product", status_code=status.HTTP_200_OK)
 def get_product(product_id: int, session: Session = Depends(get_session)):

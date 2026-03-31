@@ -44,10 +44,3 @@ class UsersManager:
       "token_type": "Bearer"
     }
         
-  def show_users(self, session: Session):
-    db_users = session.exec(select(Users)).all()
-
-    if not db_users:
-      raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Users not found!")
-    
-    return db_users
