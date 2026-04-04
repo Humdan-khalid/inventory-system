@@ -2,7 +2,7 @@ from jose import jwt, ExpiredSignatureError, JWTError
 from dotenv import load_dotenv
 import os
 from datetime import datetime, timezone, timedelta
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 load_dotenv()
@@ -23,9 +23,9 @@ def verify_token(token):
     try:
         token_decode = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except ExpiredSignatureError:
-        raise ValueError("Token has expired!")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired!")
     except JWTError:
-        raise ValueError("jwt error!")    
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="jwt error!")    
     return token_decode
 
 security = HTTPBearer()
